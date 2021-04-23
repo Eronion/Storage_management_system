@@ -53,14 +53,14 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h \
- C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage_management_system/Drivers/BSP/B-L475E-IOT01/stm32l475e_iot01.h \
- C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage_management_system/Drivers/BSP/B-L475E-IOT01/stm32l475e_iot01_tsensor.h \
- C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage_management_system/Drivers/BSP/B-L475E-IOT01/stm32l475e_iot01.h \
- c:\users\brand\stm32cubeide\workspace_1.6.1\storage_management_system\drivers\bsp\components\hts221\hts221.h \
- c:\users\brand\stm32cubeide\workspace_1.6.1\storage_management_system\drivers\bsp\components\common\hsensor.h \
- c:\users\brand\stm32cubeide\workspace_1.6.1\storage_management_system\drivers\bsp\components\common\tsensor.h \
- C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage_management_system/Drivers/BSP/B-L475E-IOT01/stm32l475e_iot01_hsensor.h \
- C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage_management_system/Drivers/BSP/Components/LCD/LiquidCrystal.h
+ C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage\ management\ system/Drivers/CMSIS/BSP/B-L475E-IOT01/stm32l475e_iot01.h \
+ C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage\ management\ system/Drivers/CMSIS/BSP/B-L475E-IOT01/stm32l475e_iot01_tsensor.h \
+ C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage\ management\ system/Drivers/CMSIS/BSP/B-L475E-IOT01/stm32l475e_iot01.h \
+ c:\users\brand\stm32cubeide\workspace_1.6.1\storage\ management\ system\drivers\cmsis\bsp\components\hts221\hts221.h \
+ c:\users\brand\stm32cubeide\workspace_1.6.1\storage\ management\ system\drivers\cmsis\bsp\components\common\hsensor.h \
+ c:\users\brand\stm32cubeide\workspace_1.6.1\storage\ management\ system\drivers\cmsis\bsp\components\common\tsensor.h \
+ C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage\ management\ system/Drivers/CMSIS/BSP/B-L475E-IOT01/stm32l475e_iot01_hsensor.h \
+ C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage\ management\ system/Drivers/CMSIS/BSP/Components/LCD/LiquidCrystal.h
 
 ../Core/Inc/main.h:
 
@@ -172,18 +172,18 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 
 ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h:
 
-C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage_management_system/Drivers/BSP/B-L475E-IOT01/stm32l475e_iot01.h:
+C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage\ management\ system/Drivers/CMSIS/BSP/B-L475E-IOT01/stm32l475e_iot01.h:
 
-C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage_management_system/Drivers/BSP/B-L475E-IOT01/stm32l475e_iot01_tsensor.h:
+C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage\ management\ system/Drivers/CMSIS/BSP/B-L475E-IOT01/stm32l475e_iot01_tsensor.h:
 
-C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage_management_system/Drivers/BSP/B-L475E-IOT01/stm32l475e_iot01.h:
+C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage\ management\ system/Drivers/CMSIS/BSP/B-L475E-IOT01/stm32l475e_iot01.h:
 
-c:\users\brand\stm32cubeide\workspace_1.6.1\storage_management_system\drivers\bsp\components\hts221\hts221.h:
+c:\users\brand\stm32cubeide\workspace_1.6.1\storage\ management\ system\drivers\cmsis\bsp\components\hts221\hts221.h:
 
-c:\users\brand\stm32cubeide\workspace_1.6.1\storage_management_system\drivers\bsp\components\common\hsensor.h:
+c:\users\brand\stm32cubeide\workspace_1.6.1\storage\ management\ system\drivers\cmsis\bsp\components\common\hsensor.h:
 
-c:\users\brand\stm32cubeide\workspace_1.6.1\storage_management_system\drivers\bsp\components\common\tsensor.h:
+c:\users\brand\stm32cubeide\workspace_1.6.1\storage\ management\ system\drivers\cmsis\bsp\components\common\tsensor.h:
 
-C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage_management_system/Drivers/BSP/B-L475E-IOT01/stm32l475e_iot01_hsensor.h:
+C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage\ management\ system/Drivers/CMSIS/BSP/B-L475E-IOT01/stm32l475e_iot01_hsensor.h:
 
-C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage_management_system/Drivers/BSP/Components/LCD/LiquidCrystal.h:
+C:/Users/brand/STM32CubeIDE/workspace_1.6.1/Storage\ management\ system/Drivers/CMSIS/BSP/Components/LCD/LiquidCrystal.h:

@@ -22,9 +22,9 @@ OBJCOPY_BIN :=
 SUBDIRS := \
 Core/Src \
 Core/Startup \
-Drivers/BSP/B-L475E-IOT01 \
-Drivers/BSP/Components/LCD \
-Drivers/BSP/Components/hts221 \
+Drivers/CMSIS/BSP/B-L475E-IOT01 \
+Drivers/CMSIS/BSP/Components/LCD \
+Drivers/CMSIS/BSP/Components/hts221 \
 Drivers/STM32L4xx_HAL_Driver/Src \
 Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS \
 Middlewares/Third_Party/FreeRTOS/Source \
