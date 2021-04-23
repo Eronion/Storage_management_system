@@ -843,7 +843,7 @@ void StartTemp_monitor(void const * argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		osMutexWait(myMutex_tempHandle, 1000);
+		osMutexWait(myMutex_tempHandle, 10000);
 		temp_value = BSP_TSENSOR_ReadTemp();
 		osMutexRelease(myMutex_tempHandle);
 		osDelay(500);
@@ -864,7 +864,7 @@ void StartHum_monitor(void const * argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		osMutexWait(myMutex_humHandle, 1000);
+		osMutexWait(myMutex_humHandle, 10000);
 		hum_value = BSP_HSENSOR_ReadHumidity();
 		osMutexRelease(myMutex_humHandle);
 		osDelay(500);
@@ -887,11 +887,11 @@ void StartLCD_temp(void const * argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		osMutexWait(myMutex_tempHandle, 1000);
+		osMutexWait(myMutex_tempHandle, 100000);
 		temp_local = temp_value;
 		osMutexRelease(myMutex_tempHandle);
 
-		osMutexWait(myMutex_LCDHandle, 10000);
+		osMutexWait(myMutex_LCDHandle, 100000);
 		clear();
 		int tmpIntT1 = temp_local;
 		float tmpFracT = temp_local - tmpIntT1;
@@ -923,11 +923,11 @@ void StartLCD_hum(void const * argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		osMutexWait(myMutex_humHandle, 1000);
+		osMutexWait(myMutex_humHandle, 100000);
 		hum_local = hum_value;
 		osMutexRelease(myMutex_humHandle);
 
-		osMutexWait(myMutex_LCDHandle, 10000);
+		osMutexWait(myMutex_LCDHandle, 1000000);
 		clear();
 		int tmpIntH1 = hum_local;
 		float tmpFracH = hum_local - tmpIntH1;
@@ -973,7 +973,7 @@ void StartServo_manager(void const * argument)
 	{
 		//Qui devo capire se siamo in emergenza dal flag o sem, e quindi muovere il
 		// servo di conseguenza
-		osMutexWait(myMutexEmergencyHandle, 10000);
+		osMutexWait(myMutexEmergencyHandle, 1000000);
 		emergency_local = emergency_temp;
 		osMutexRelease(myMutexEmergencyHandle);
 
@@ -1006,11 +1006,11 @@ void StartT_ProblemDetect(void const * argument)
 	{
 		//Qui leggiamo temp e in caso di problemi lo segnaliamo
 		osDelay(10000);
-		osMutexWait(myMutexEmergencyHandle, 10000);
+		osMutexWait(myMutexEmergencyHandle, 1000000);
 		emergency_temp = 1;
 		osMutexRelease(myMutexEmergencyHandle);
 		osDelay(10000);
-		osMutexWait(myMutexEmergencyHandle, 10000);
+		osMutexWait(myMutexEmergencyHandle, 1000000);
 		emergency_temp = 0;
 		osMutexRelease(myMutexEmergencyHandle);
 	}
@@ -1050,18 +1050,14 @@ void StartBuzzer_manager(void const * argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		osMutexWait(myMutexEmergencyHandle, 10000);
+		osMutexWait(myMutexEmergencyHandle, 1000000);
 		emergency_local = emergency_temp;
 		osMutexRelease(myMutexEmergencyHandle);
-		//emergency_local = leggicodiceemergenza();
-
 		if(emergency_local == 1){
 			HAL_GPIO_WritePin(Buzzer_GPIO_Port, Buzzer_Pin, GPIO_PIN_SET);
 			osDelay(1000);
 			HAL_GPIO_WritePin(Buzzer_GPIO_Port, Buzzer_Pin, GPIO_PIN_RESET);
-			osMutexRelease(myMutexEmergencyHandle);
 		}
-
 		osDelay(700);
 
 	}
@@ -1082,7 +1078,7 @@ void StartLCD_TempProblem(void const * argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		osMutexWait(myMutexEmergencyHandle, 10000);
+		osMutexWait(myMutexEmergencyHandle, 1000000);
 		emergency_local = emergency_temp;
 		osMutexRelease(myMutexEmergencyHandle);
 		if(emergency_local == 1){
@@ -1119,7 +1115,7 @@ void StartLCD_HumProblem(void const * argument)
 	for(;;)
 	{
 		if(0/*Se siamo in emergenza per temp */){
-			osMutexWait(myMutex_LCDHandle, 10000);
+			osMutexWait(myMutex_LCDHandle, 1000000);
 			clear();
 			setCursor(0, 0);
 			print("EMERGENCY");
@@ -1155,12 +1151,9 @@ void StartLED_manager(void const * argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		//Leggo la flag di emergenza
-		osMutexWait(myMutexEmergencyHandle, 10000);
+		osMutexWait(myMutexEmergencyHandle, 1000000);
 		emergency_local = emergency_temp;
 		osMutexRelease(myMutexEmergencyHandle);
-
-
 
 		if((timers_started == false)&&(emergency_local == 1 /*Inseriremo qui il check della variabile o sem che segnala l'emergenza*/)){
 			timers_started = true;
@@ -1194,7 +1187,7 @@ void StartButton_manager(void const * argument)
 			//Here when the button is pressed
 			//Qui dobbiamo semplicemente riportare il flag o il semaforo che segnala l'emergenza
 			//in modalità non-emergenza.
-			osMutexWait(myMutexEmergencyHandle, 10000);
+			osMutexWait(myMutexEmergencyHandle, 100000);
 			emergency_temp = 0;
 			osMutexRelease(myMutexEmergencyHandle);
 		}
@@ -2121,7 +2114,7 @@ void StartTemp_monitor(void const * argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		osMutexWait(myMutex_tempHandle, 1000);
+		osMutexWait(myMutex_tempHandle, 10000);
 		temp_value = BSP_TSENSOR_ReadTemp();
 		osMutexRelease(myMutex_tempHandle);
 		osDelay(500);
@@ -2142,7 +2135,7 @@ void StartHum_monitor(void const * argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		osMutexWait(myMutex_humHandle, 1000);
+		osMutexWait(myMutex_humHandle, 10000);
 		hum_value = BSP_HSENSOR_ReadHumidity();
 		osMutexRelease(myMutex_humHandle);
 		osDelay(500);
@@ -2165,11 +2158,11 @@ void StartLCD_temp(void const * argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		osMutexWait(myMutex_tempHandle, 1000);
+		osMutexWait(myMutex_tempHandle, 100000);
 		temp_local = temp_value;
 		osMutexRelease(myMutex_tempHandle);
 
-		osMutexWait(myMutex_LCDHandle, 10000);
+		osMutexWait(myMutex_LCDHandle, 100000);
 		clear();
 		int tmpIntT1 = temp_local;
 		float tmpFracT = temp_local - tmpIntT1;
@@ -2201,11 +2194,11 @@ void StartLCD_hum(void const * argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		osMutexWait(myMutex_humHandle, 1000);
+		osMutexWait(myMutex_humHandle, 100000);
 		hum_local = hum_value;
 		osMutexRelease(myMutex_humHandle);
 
-		osMutexWait(myMutex_LCDHandle, 10000);
+		osMutexWait(myMutex_LCDHandle, 1000000);
 		clear();
 		int tmpIntH1 = hum_local;
 		float tmpFracH = hum_local - tmpIntH1;
@@ -2251,7 +2244,7 @@ void StartServo_manager(void const * argument)
 	{
 		//Qui devo capire se siamo in emergenza dal flag o sem, e quindi muovere il
 		// servo di conseguenza
-		osMutexWait(myMutexEmergencyHandle, 10000);
+		osMutexWait(myMutexEmergencyHandle, 1000000);
 		emergency_local = emergency_temp;
 		osMutexRelease(myMutexEmergencyHandle);
 
@@ -2284,11 +2277,11 @@ void StartT_ProblemDetect(void const * argument)
 	{
 		//Qui leggiamo temp e in caso di problemi lo segnaliamo
 		osDelay(10000);
-		osMutexWait(myMutexEmergencyHandle, 10000);
+		osMutexWait(myMutexEmergencyHandle, 1000000);
 		emergency_temp = 1;
 		osMutexRelease(myMutexEmergencyHandle);
 		osDelay(10000);
-		osMutexWait(myMutexEmergencyHandle, 10000);
+		osMutexWait(myMutexEmergencyHandle, 1000000);
 		emergency_temp = 0;
 		osMutexRelease(myMutexEmergencyHandle);
 	}
@@ -2328,18 +2321,14 @@ void StartBuzzer_manager(void const * argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		osMutexWait(myMutexEmergencyHandle, 10000);
+		osMutexWait(myMutexEmergencyHandle, 1000000);
 		emergency_local = emergency_temp;
 		osMutexRelease(myMutexEmergencyHandle);
-		//emergency_local = leggicodiceemergenza();
-
 		if(emergency_local == 1){
 			HAL_GPIO_WritePin(Buzzer_GPIO_Port, Buzzer_Pin, GPIO_PIN_SET);
 			osDelay(1000);
 			HAL_GPIO_WritePin(Buzzer_GPIO_Port, Buzzer_Pin, GPIO_PIN_RESET);
-			osMutexRelease(myMutexEmergencyHandle);
 		}
-
 		osDelay(700);
 
 	}
@@ -2360,7 +2349,7 @@ void StartLCD_TempProblem(void const * argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		osMutexWait(myMutexEmergencyHandle, 10000);
+		osMutexWait(myMutexEmergencyHandle, 1000000);
 		emergency_local = emergency_temp;
 		osMutexRelease(myMutexEmergencyHandle);
 		if(emergency_local == 1){
@@ -2397,7 +2386,7 @@ void StartLCD_HumProblem(void const * argument)
 	for(;;)
 	{
 		if(0/*Se siamo in emergenza per temp */){
-			osMutexWait(myMutex_LCDHandle, 10000);
+			osMutexWait(myMutex_LCDHandle, 1000000);
 			clear();
 			setCursor(0, 0);
 			print("EMERGENCY");
@@ -2433,12 +2422,9 @@ void StartLED_manager(void const * argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		//Leggo la flag di emergenza
-		osMutexWait(myMutexEmergencyHandle, 10000);
+		osMutexWait(myMutexEmergencyHandle, 1000000);
 		emergency_local = emergency_temp;
 		osMutexRelease(myMutexEmergencyHandle);
-
-
 
 		if((timers_started == false)&&(emergency_local == 1 /*Inseriremo qui il check della variabile o sem che segnala l'emergenza*/)){
 			timers_started = true;
@@ -2472,7 +2458,7 @@ void StartButton_manager(void const * argument)
 			//Here when the button is pressed
 			//Qui dobbiamo semplicemente riportare il flag o il semaforo che segnala l'emergenza
 			//in modalità non-emergenza.
-			osMutexWait(myMutexEmergencyHandle, 10000);
+			osMutexWait(myMutexEmergencyHandle, 100000);
 			emergency_temp = 0;
 			osMutexRelease(myMutexEmergencyHandle);
 		}
