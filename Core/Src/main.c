@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
- ******************************************************************************
- * @file           : main.c
- * @brief          : Main program body
- ******************************************************************************
- * @attention
- *
- * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
- * All rights reserved.</center></h2>
- *
- * This software component is licensed by ST under BSD 3-Clause license,
- * the "License"; You may not use this file except in compliance with the
- * License. You may obtain a copy of the License at:
- *                        opensource.org/licenses/BSD-3-Clause
- *
- ******************************************************************************
- */
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.</center></h2>
+  *
+  * This software component is licensed by ST under BSD 3-Clause license,
+  * the "License"; You may not use this file except in compliance with the
+  * License. You may obtain a copy of the License at:
+  *                        opensource.org/licenses/BSD-3-Clause
+  *
+  ******************************************************************************
+  */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -28,7 +28,6 @@
 #include "stm32l475e_iot01_hsensor.h"
 #include "LiquidCrystal.h"
 #include <stdio.h>
-#include <stdbool.h>
 #include <math.h>
 
 /* USER CODE END Includes */
@@ -40,24 +39,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
-//Possible values: NORMAL_MODE or DEMO_MODE to perform cyclically all the emergencies
-#define NORMAL_MODE
-
-//Codes for the different types of alarm
-#define ALL_TOT 6
-#define ALL_TEMP 7
-#define ALL_HUM 8
-#define NO_ALL 9
-
-//Hight tresh to start emergencies and low to stop in hysteresis fashion to avoid
-// multiple bouncing in the moment where the emergency stop
-#define HUM_HIGH_TRESH 75
-#define HUM_LOW_TRESH 73
-#define TEMP_HIGH_TRESH 30
-#define TEMP_LOW_TRESH 29
-
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -86,26 +67,21 @@ osThreadId Hum_monitorHandle;
 osThreadId LCD_tempHandle;
 osThreadId LCD_humHandle;
 osThreadId Servo_managerHandle;
-osThreadId ProblemDetectorHandle;
+osThreadId T_ProblemDetectHandle;
+osThreadId H_ProblemDetectHandle;
 osThreadId Buzzer_managerHandle;
 osThreadId LCD_TempProblemHandle;
 osThreadId LCD_HumProblemHandle;
 osThreadId LED_managerHandle;
 osThreadId Button_managerHandle;
-osThreadId LCD_TotAllarmHandle;
-osThreadId Buzzer_soundHandle;
 osTimerId myTimerLed1Handle;
 osTimerId myTimerLed2Handle;
 osMutexId myMutex_tempHandle;
 osMutexId myMutex_humHandle;
 osMutexId myMutex_LCDHandle;
-osMutexId myMutexEmergencyHandle;
 /* USER CODE BEGIN PV */
-float temp_value = 0; // global variable to store temperature value
-float hum_value = 0; // global variable to store humidity value
-int emergency_code = NO_ALL; // code that determines the emergency
-bool stop_allarmi = false;
-
+float temp_value = 0; // Variable to store temperature value
+float hum_value = 0; // Variable to store humidity value
 
 /* USER CODE END PV */
 
@@ -125,14 +101,13 @@ void StartHum_monitor(void const * argument);
 void StartLCD_temp(void const * argument);
 void StartLCD_hum(void const * argument);
 void StartServo_manager(void const * argument);
-void StartProblemDetector(void const * argument);
+void StartT_ProblemDetect(void const * argument);
+void StartH_ProblemDetect(void const * argument);
 void StartBuzzer_manager(void const * argument);
 void StartLCD_TempProblem(void const * argument);
 void StartLCD_HumProblem(void const * argument);
 void StartLED_manager(void const * argument);
 void StartButton_manager(void const * argument);
-void StartLCD_TotAllarm(void const * argument);
-void StartBuzzer_sound(void const * argument);
 void CallbackLed1(void const * argument);
 void CallbackLed2(void const * argument);
 
@@ -182,19 +157,11 @@ int main(void)
   MX_USB_OTG_FS_PCD_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-
-  	//Initialization
-	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4); //Timer for Servo PWN
-	BSP_TSENSOR_Init(); //Temperature sensor initialization
-	BSP_HSENSOR_Init(); //Temperature sensor initialization
-	LiquidCrystal(GPIOC, LCD_RS_Pin, LCD_E_Pin, LCD_E_Pin, LCD_D4_Pin, LCD_D5_Pin, LCD_D6_Pin, LCD_D7_Pin); //Initialize the LCD specifying its pins
-
-	//Write a loading phrase on the LCD
-	clear();
-	setCursor(0, 0);
-	print("INIZIALIZZAZIONE");
-	setCursor(0, 1);
-	print("IN CORSO...");
+	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
+	BSP_TSENSOR_Init();
+	BSP_HSENSOR_Init();
+	LiquidCrystal(GPIOC, LCD_RS_Pin, LCD_E_Pin, LCD_E_Pin, LCD_D4_Pin, LCD_D5_Pin, LCD_D6_Pin, LCD_D7_Pin); //Initialize the LCD
+	print("Caricamento..");
 
   /* USER CODE END 2 */
 
@@ -211,16 +178,12 @@ int main(void)
   osMutexDef(myMutex_LCD);
   myMutex_LCDHandle = osMutexCreate(osMutex(myMutex_LCD));
 
-  /* definition and creation of myMutexEmergency */
-  osMutexDef(myMutexEmergency);
-  myMutexEmergencyHandle = osMutexCreate(osMutex(myMutexEmergency));
-
   /* USER CODE BEGIN RTOS_MUTEX */
-	/* add mutexes, ... */
+  /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
-	/* add semaphores, ... */
+  /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* Create the timer(s) */
@@ -233,11 +196,11 @@ int main(void)
   myTimerLed2Handle = osTimerCreate(osTimer(myTimerLed2), osTimerPeriodic, NULL);
 
   /* USER CODE BEGIN RTOS_TIMERS */
-	/* start timers, add new ones, ... */
+  /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-	/* add queues, ... */
+  /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -246,55 +209,51 @@ int main(void)
   Temp_monitorHandle = osThreadCreate(osThread(Temp_monitor), NULL);
 
   /* definition and creation of Hum_monitor */
-  osThreadDef(Hum_monitor, StartHum_monitor, osPriorityNormal, 0, 128);
+  osThreadDef(Hum_monitor, StartHum_monitor, osPriorityIdle, 0, 128);
   Hum_monitorHandle = osThreadCreate(osThread(Hum_monitor), NULL);
 
   /* definition and creation of LCD_temp */
-  osThreadDef(LCD_temp, StartLCD_temp, osPriorityLow, 0, 128);
+  osThreadDef(LCD_temp, StartLCD_temp, osPriorityIdle, 0, 128);
   LCD_tempHandle = osThreadCreate(osThread(LCD_temp), NULL);
 
   /* definition and creation of LCD_hum */
-  osThreadDef(LCD_hum, StartLCD_hum, osPriorityLow, 0, 128);
+  osThreadDef(LCD_hum, StartLCD_hum, osPriorityIdle, 0, 128);
   LCD_humHandle = osThreadCreate(osThread(LCD_hum), NULL);
 
   /* definition and creation of Servo_manager */
-  osThreadDef(Servo_manager, StartServo_manager, osPriorityHigh, 0, 128);
+  osThreadDef(Servo_manager, StartServo_manager, osPriorityIdle, 0, 128);
   Servo_managerHandle = osThreadCreate(osThread(Servo_manager), NULL);
 
-  /* definition and creation of ProblemDetector */
-  osThreadDef(ProblemDetector, StartProblemDetector, osPriorityHigh, 0, 128);
-  ProblemDetectorHandle = osThreadCreate(osThread(ProblemDetector), NULL);
+  /* definition and creation of T_ProblemDetect */
+  osThreadDef(T_ProblemDetect, StartT_ProblemDetect, osPriorityIdle, 0, 128);
+  T_ProblemDetectHandle = osThreadCreate(osThread(T_ProblemDetect), NULL);
+
+  /* definition and creation of H_ProblemDetect */
+  osThreadDef(H_ProblemDetect, StartH_ProblemDetect, osPriorityIdle, 0, 128);
+  H_ProblemDetectHandle = osThreadCreate(osThread(H_ProblemDetect), NULL);
 
   /* definition and creation of Buzzer_manager */
-  osThreadDef(Buzzer_manager, StartBuzzer_manager, osPriorityAboveNormal, 0, 128);
+  osThreadDef(Buzzer_manager, StartBuzzer_manager, osPriorityIdle, 0, 128);
   Buzzer_managerHandle = osThreadCreate(osThread(Buzzer_manager), NULL);
 
   /* definition and creation of LCD_TempProblem */
-  osThreadDef(LCD_TempProblem, StartLCD_TempProblem, osPriorityNormal, 0, 128);
+  osThreadDef(LCD_TempProblem, StartLCD_TempProblem, osPriorityIdle, 0, 128);
   LCD_TempProblemHandle = osThreadCreate(osThread(LCD_TempProblem), NULL);
 
   /* definition and creation of LCD_HumProblem */
-  osThreadDef(LCD_HumProblem, StartLCD_HumProblem, osPriorityNormal, 0, 128);
+  osThreadDef(LCD_HumProblem, StartLCD_HumProblem, osPriorityIdle, 0, 128);
   LCD_HumProblemHandle = osThreadCreate(osThread(LCD_HumProblem), NULL);
 
   /* definition and creation of LED_manager */
-  osThreadDef(LED_manager, StartLED_manager, osPriorityAboveNormal, 0, 128);
+  osThreadDef(LED_manager, StartLED_manager, osPriorityIdle, 0, 128);
   LED_managerHandle = osThreadCreate(osThread(LED_manager), NULL);
 
   /* definition and creation of Button_manager */
-  osThreadDef(Button_manager, StartButton_manager, osPriorityHigh, 0, 128);
+  osThreadDef(Button_manager, StartButton_manager, osPriorityIdle, 0, 128);
   Button_managerHandle = osThreadCreate(osThread(Button_manager), NULL);
 
-  /* definition and creation of LCD_TotAllarm */
-  osThreadDef(LCD_TotAllarm, StartLCD_TotAllarm, osPriorityNormal, 0, 128);
-  LCD_TotAllarmHandle = osThreadCreate(osThread(LCD_TotAllarm), NULL);
-
-  /* definition and creation of Buzzer_sound */
-  osThreadDef(Buzzer_sound, StartBuzzer_sound, osPriorityAboveNormal, 0, 128);
-  Buzzer_soundHandle = osThreadCreate(osThread(Buzzer_sound), NULL);
-
   /* USER CODE BEGIN RTOS_THREADS */
-	/* add threads, ... */
+  /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */
@@ -303,12 +262,12 @@ int main(void)
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	while (1)
-	{
+  while (1)
+  {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	}
+  }
   /* USER CODE END 3 */
 }
 
@@ -862,174 +821,122 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-//This method return the emergency_code value reading it in critical section
-int readEmergencyCode(){
-	int r;
-	osMutexWait(myMutexEmergencyHandle, osWaitForever);
-	r = emergency_code;
-	osMutexRelease(myMutexEmergencyHandle);
-	return r;
-}
-
-//This method return the temp_value reading it in critical section
-float readTemperature(){
-	float r;
-	osMutexWait(myMutex_tempHandle, osWaitForever);
-	r = temp_value;
-	osMutexRelease(myMutex_tempHandle);
-	return r;
-}
-
-//This method return the hum_value reading it in critical section
-float readHumidity(){
-	float r;
-	osMutexWait(myMutex_humHandle, osWaitForever);
-	r = hum_value;
-	osMutexRelease(myMutex_humHandle);
-	return r;
-}
-
-
-
-
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartTemp_monitor */
 /**
- * @brief  Function implementing the Temp_monitor thread.
- * @param  argument: Not used
- * @retval None
- */
+  * @brief  Function implementing the Temp_monitor thread.
+  * @param  argument: Not used
+  * @retval None
+  */
 /* USER CODE END Header_StartTemp_monitor */
 void StartTemp_monitor(void const * argument)
 {
   /* USER CODE BEGIN 5 */
-	float temp_try = 0;
-	/* Infinite loop */
-	for(;;)
-	{
-		//Read the temperature from the sensor and assign its value only of its good
-		temp_try = BSP_TSENSOR_ReadTemp();
-		osMutexWait(myMutex_tempHandle, osWaitForever);
-		if(temp_try >1 && temp_try < 50){
-			temp_value = temp_try;
-		}
+  /* Infinite loop */
+  for(;;)
+  {
+		osMutexWait(myMutex_tempHandle, 10000);
+		temp_value = BSP_TSENSOR_ReadTemp();
 		osMutexRelease(myMutex_tempHandle);
-		osDelay(500);
-	}
+		osDelay(1000);  }
   /* USER CODE END 5 */
 }
 
 /* USER CODE BEGIN Header_StartHum_monitor */
 /**
- * @brief Function implementing the Hum_monitor thread.
- * @param argument: Not used
- * @retval None
- */
+* @brief Function implementing the Hum_monitor thread.
+* @param argument: Not used
+* @retval None
+*/
 /* USER CODE END Header_StartHum_monitor */
 void StartHum_monitor(void const * argument)
 {
   /* USER CODE BEGIN StartHum_monitor */
-	float hum_try = 0;
-	/* Infinite loop */
-	for(;;)
-	{
-		//Read the humidity from the sensor and assign its value only of its good
-		hum_try = BSP_HSENSOR_ReadHumidity();
-		osMutexWait(myMutex_humHandle, osWaitForever);
-		if(hum_try >10 && hum_try < 90){
-			hum_value = hum_try;
-		}
+  /* Infinite loop */
+  for(;;)
+  {
+		osMutexWait(myMutex_humHandle, 10000);
+		hum_value = BSP_HSENSOR_ReadHumidity();
 		osMutexRelease(myMutex_humHandle);
-		osDelay(500);
-	}
+		osDelay(2000);
+  }
   /* USER CODE END StartHum_monitor */
 }
 
 /* USER CODE BEGIN Header_StartLCD_temp */
 /**
- * @brief Function implementing the LCD_temp thread.
- * @param argument: Not used
- * @retval None
- */
+* @brief Function implementing the LCD_temp thread.
+* @param argument: Not used
+* @retval None
+*/
 /* USER CODE END Header_StartLCD_temp */
 void StartLCD_temp(void const * argument)
 {
   /* USER CODE BEGIN StartLCD_temp */
-	char str_tmpT[100] = ""; // Formatted message to display the temperature value
-	float temp_local = 0; //Local variable used to read and store the humidity value
-	/* Infinite loop */
-	for(;;)
-	{
-		temp_local = readTemperature();
-
-		//Show the temperature value on the LCD
-		osMutexWait(myMutex_LCDHandle, osWaitForever);
+	char str_tmpT2[100] = ""; // Formatted message to display the temperature value
+  /* Infinite loop */
+  for(;;)
+  {
+		osMutexWait(myMutex_LCDHandle, 10000);
 		clear();
-		int tmpIntT1 = temp_local;
-		float tmpFracT = temp_local - tmpIntT1;
+		int tmpIntT1 = temp_value;
+		float tmpFracT = temp_value - tmpIntT1;
 		int tmpIntT2 = trunc(tmpFracT * 100);
-		snprintf(str_tmpT,100,"%d.%02d Celsius", tmpIntT1, tmpIntT2);
+		snprintf(str_tmpT2,100,"%d.%02d Celsius", tmpIntT1, tmpIntT2);
 		setCursor(0, 0);
 		print("TEMPERATURE"); //Print this
-		setCursor(0, 1); //At second row first column
-		print(str_tmpT); //Print this
-		osDelay(2500);
+		setCursor(0, 1); //At secound row first column
+		print(str_tmpT2); //Print this
+		osDelay(3000);
 		osMutexRelease(myMutex_LCDHandle);
-		osDelay(1000);
-	}
+		osDelay(3000);
+  }
   /* USER CODE END StartLCD_temp */
 }
 
 /* USER CODE BEGIN Header_StartLCD_hum */
 /**
- * @brief Function implementing the LCD_hum thread.
- * @param argument: Not used
- * @retval None
- */
+* @brief Function implementing the LCD_hum thread.
+* @param argument: Not used
+* @retval None
+*/
 /* USER CODE END Header_StartLCD_hum */
 void StartLCD_hum(void const * argument)
 {
   /* USER CODE BEGIN StartLCD_hum */
-	char str_tmpH[100] = ""; // Formatted message to display the humidity value
-	float hum_local = 0; //Local variable used to read and store the humidity value
-
-	/* Infinite loop */
-	for(;;)
-	{
-
-		hum_local = readHumidity();
-
-		//Show the hum value on the LCD
-		osMutexWait(myMutex_LCDHandle, osWaitForever);
+	char str_tmpH2[100] = ""; // Formatted message to display the humidity value
+  /* Infinite loop */
+  for(;;)
+  {
+		osMutexWait(myMutex_LCDHandle, 10000);
 		clear();
-		int tmpIntH1 = hum_local;
-		float tmpFracH = hum_local - tmpIntH1;
+		int tmpIntH1 = hum_value;
+		float tmpFracH = hum_value - tmpIntH1;
 		int tmpIntH2 = trunc(tmpFracH * 100);
-		snprintf(str_tmpH,100,"%d.%02d RH", tmpIntH1, tmpIntH2);
+		snprintf(str_tmpH2,100,"%d.%02d RH", tmpIntH1, tmpIntH2);
 		setCursor(0, 0);
 		print("UMIDITY"); //Print this
-		setCursor(0, 1); //At second row first column
-		print(str_tmpH); //Print this
-		osDelay(2500);
+		setCursor(0, 1); //At secound row first column
+		print(str_tmpH2); //Print this
+		//print(millis() / 1000); //Print the value of secounds
+		osDelay(3000);
 		osMutexRelease(myMutex_LCDHandle);
-		osDelay(1000);
-	}
+		osDelay(3000);
+  }
   /* USER CODE END StartLCD_hum */
 }
 
 /* USER CODE BEGIN Header_StartServo_manager */
 /**
- * @brief Function implementing the Servo_manager thread.
- * @param argument: Not used
- * @retval None
- */
+* @brief Function implementing the Servo_manager thread.
+* @param argument: Not used
+* @retval None
+*/
 /* USER CODE END Header_StartServo_manager */
 void StartServo_manager(void const * argument)
 {
   /* USER CODE BEGIN StartServo_manager */
-
-
 	TIM2->PSC = 71;
 	TIM2->ARR = 20000;
 	TIM2->CCMR1 |= TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1PE;
@@ -1038,365 +945,165 @@ void StartServo_manager(void const * argument)
 	TIM2->CR1 |= TIM_CR1_ARPE;
 	TIM2->EGR |= TIM_EGR_UG;
 	TIM2->CR1 |= TIM_CR1_CEN;
-
-	//Initialize the servo position
-	TIM2->CCR4 = 5.556*0 + 1000;
-	HAL_Delay(200);
-
-	bool servo_actuated = false;
-	int emergency_local = NO_ALL;
-
-	/* Infinite loop */
-	for(;;)
-	{
-		emergency_local = readEmergencyCode();
-
-		//Moving the servo only when needed and giving the command only once throught a boolean
-		if((emergency_local != NO_ALL) && (servo_actuated == false)){
-			servo_actuated = true;
-			TIM2->CCR4 = 5.556*300 + 1000;
-			HAL_Delay(500);
-		} else if ((emergency_local == NO_ALL) && (servo_actuated)){
-			servo_actuated = false;
-			TIM2->CCR4 = 5.556*0 + 1000;
-			HAL_Delay(500);
-		}
-		osDelay(400);
-	}
+  /* Infinite loop */
+  for(;;)
+  {
+		//if(temp_value>25){
+		TIM2->CCR4 = 5.556*0 + 1000;
+		HAL_Delay(2000);
+		//osMutexRelease(myMutex01Handle);
+		//} else if (temp_value < 25){
+		TIM2->CCR4 = 5.556*300 + 1000;
+		HAL_Delay(2000);
+		//	osMutexRelease(myMutex01Handle);
+		//}
+		osDelay(5000);
+  }
   /* USER CODE END StartServo_manager */
 }
 
-/* USER CODE BEGIN Header_StartProblemDetector */
+/* USER CODE BEGIN Header_StartT_ProblemDetect */
 /**
-* @brief Function implementing the ProblemDetector thread.
+* @brief Function implementing the T_ProblemDetect thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartProblemDetector */
-void StartProblemDetector(void const * argument)
+/* USER CODE END Header_StartT_ProblemDetect */
+void StartT_ProblemDetect(void const * argument)
 {
-  /* USER CODE BEGIN StartProblemDetector */
-	float temp_local = 0;
-	float hum_local = 0;
-	int emergency_local = NO_ALL;
-	/* Infinite loop */
-	for(;;)
-	{
+  /* USER CODE BEGIN StartT_ProblemDetect */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1000);
+  }
+  /* USER CODE END StartT_ProblemDetect */
+}
 
-#ifdef NORMAL_MODE
-
-		//if button is pressed during an alarm i stop them for a given time
-		if(stop_allarmi == true){
-			stop_allarmi = false;
-			osDelay(20000);
-		}
-
-		temp_local = readTemperature();
-
-		hum_local = readHumidity();
-
-		//If i have a write an alarm code to a local variable
-		if((temp_local > TEMP_HIGH_TRESH) && (hum_local > HUM_HIGH_TRESH)){
-			emergency_local = ALL_TOT;
-		} else if ((temp_local > TEMP_HIGH_TRESH) && (hum_local < HUM_LOW_TRESH)){
-			emergency_local = ALL_TEMP;
-		} else if ((hum_local > HUM_HIGH_TRESH) && (temp_local < TEMP_LOW_TRESH)){
-			emergency_local = ALL_HUM;
-		} else if ((hum_local < HUM_LOW_TRESH) && (temp_local < TEMP_LOW_TRESH)) {
-			emergency_local = NO_ALL;
-		}
-
-		//Assigning the local variable to the global variable
-		osMutexWait(myMutexEmergencyHandle, osWaitForever);
-		emergency_code = emergency_local;
-		osMutexRelease(myMutexEmergencyHandle);
-
-		osDelay(500);
-#endif
-
-#ifdef DEMO_MODE
-
-				//This demo mode perform cyclically every emergency
-				osDelay(20000);
-				osMutexWait(myMutexEmergencyHandle, osWaitForever);
-				emergency_code = ALL_TEMP;
-				osMutexRelease(myMutexEmergencyHandle);
-				osDelay(20000);
-				osMutexWait(myMutexEmergencyHandle, osWaitForever);
-				emergency_code = NO_ALL;
-				osMutexRelease(myMutexEmergencyHandle);
-				osDelay(20000);
-				osMutexWait(myMutexEmergencyHandle, osWaitForever);
-				emergency_code = ALL_HUM;
-				osMutexRelease(myMutexEmergencyHandle);
-				osDelay(20000);
-				osMutexWait(myMutexEmergencyHandle, osWaitForever);
-				emergency_code = NO_ALL;
-				osMutexRelease(myMutexEmergencyHandle);
-				osDelay(20000);
-				osMutexWait(myMutexEmergencyHandle, osWaitForever);
-				emergency_code = ALL_TOT;
-				osMutexRelease(myMutexEmergencyHandle);
-				osDelay(20000);
-				osMutexWait(myMutexEmergencyHandle, osWaitForever);
-				emergency_code = NO_ALL;
-				osMutexRelease(myMutexEmergencyHandle);
-
-#endif
-
-	}
-  /* USER CODE END StartProblemDetector */
+/* USER CODE BEGIN Header_StartH_ProblemDetect */
+/**
+* @brief Function implementing the H_ProblemDetect thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartH_ProblemDetect */
+void StartH_ProblemDetect(void const * argument)
+{
+  /* USER CODE BEGIN StartH_ProblemDetect */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1000);
+  }
+  /* USER CODE END StartH_ProblemDetect */
 }
 
 /* USER CODE BEGIN Header_StartBuzzer_manager */
 /**
- * @brief Function implementing the Buzzer_manager thread.
- * @param argument: Not used
- * @retval None
- */
+* @brief Function implementing the Buzzer_manager thread.
+* @param argument: Not used
+* @retval None
+*/
 /* USER CODE END Header_StartBuzzer_manager */
 void StartBuzzer_manager(void const * argument)
 {
   /* USER CODE BEGIN StartBuzzer_manager */
-	int emergency_local = NO_ALL;
-	/* Infinite loop */
-	for(;;)
-	{
-		emergency_local = readEmergencyCode();
-
-		if(emergency_local != NO_ALL){
-			//Resume the task in the ready queue if the conditions are satisfied
-			osThreadResume(Buzzer_soundHandle);
-		} else {
-			//Suspend the task, being not a accumulative call we can call it
-			// how many times we want still requiring only a Resume call to
-			//  ready the suspended task
-			osThreadSuspend(Buzzer_soundHandle);
-
-			//Shut off the buzzer to avoid that it remains on becouse the task was suspended during execution
+  /* Infinite loop */
+  for(;;)
+  {
+		HAL_GPIO_WritePin(Buzzer_GPIO_Port, Buzzer_Pin, GPIO_PIN_SET);
+			osDelay(1000);
 			HAL_GPIO_WritePin(Buzzer_GPIO_Port, Buzzer_Pin, GPIO_PIN_RESET);
-		}
-		osDelay(500);
 
-	}
+			osDelay(1000);
+  }
   /* USER CODE END StartBuzzer_manager */
 }
 
 /* USER CODE BEGIN Header_StartLCD_TempProblem */
 /**
- * @brief Function implementing the LCD_TempProblem thread.
- * @param argument: Not used
- * @retval None
- */
+* @brief Function implementing the LCD_TempProblem thread.
+* @param argument: Not used
+* @retval None
+*/
 /* USER CODE END Header_StartLCD_TempProblem */
 void StartLCD_TempProblem(void const * argument)
 {
   /* USER CODE BEGIN StartLCD_TempProblem */
-	int emergency_local = NO_ALL;
-	/* Infinite loop */
-	for(;;)
-	{
-		emergency_local = readEmergencyCode();
-
-		//Writing an emergency message in the LCD if conditions are satisfied
-		if(emergency_local == ALL_TEMP){
-			osMutexWait(myMutex_LCDHandle, osWaitForever);
-			clear();
-			setCursor(0, 0);
-			print("EMERGENCY");
-			osDelay(2000);
-			clear();
-			setCursor(0, 0);
-			print("TEMPERATURE"); //Print this
-			setCursor(0, 1); //At secound row first column
-			print("OUT OF RANGE"); //Print this
-			osDelay(2000);
-			osMutexRelease(myMutex_LCDHandle);
-			osDelay(5000);
-		}
-		osDelay(1000);
-	}
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1000);
+  }
   /* USER CODE END StartLCD_TempProblem */
 }
 
 /* USER CODE BEGIN Header_StartLCD_HumProblem */
 /**
- * @brief Function implementing the LCD_HumProblem thread.
- * @param argument: Not used
- * @retval None
- */
+* @brief Function implementing the LCD_HumProblem thread.
+* @param argument: Not used
+* @retval None
+*/
 /* USER CODE END Header_StartLCD_HumProblem */
 void StartLCD_HumProblem(void const * argument)
 {
   /* USER CODE BEGIN StartLCD_HumProblem */
-	int emergency_local = NO_ALL;
-	/* Infinite loop */
-	for(;;)
-	{
-		emergency_local = readEmergencyCode();
-
-		//Writing an emergency message in the LCD if conditions are satisfied
-		if(emergency_local == ALL_HUM){
-			osMutexWait(myMutex_LCDHandle, osWaitForever);
-			clear();
-			setCursor(0, 0);
-			print("EMERGENCY");
-			osDelay(2000);
-			clear();
-			setCursor(0, 0);
-			print("HUMIDITY VALUE"); //Print this
-			setCursor(0, 1); //At secound row first column
-			print("OUT OF RANGE"); //Print this
-			osDelay(2000);
-			osMutexRelease(myMutex_LCDHandle);
-			osDelay(5000);
-		}
-		osDelay(1000);
-	}
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1000);
+  }
   /* USER CODE END StartLCD_HumProblem */
 }
 
 /* USER CODE BEGIN Header_StartLED_manager */
 /**
- * @brief Function implementing the LED_manager thread.
- * @param argument: Not used
- * @retval None
- */
+* @brief Function implementing the LED_manager thread.
+* @param argument: Not used
+* @retval None
+*/
 /* USER CODE END Header_StartLED_manager */
 void StartLED_manager(void const * argument)
 {
   /* USER CODE BEGIN StartLED_manager */
-	bool timers_started = false;
-	//Questa flag serve a vedere se i timer sono attivi così
-	// da agggiungere una consizione all'else if in modo da non entrare a stoppare i timer se
-	// non sono stati effettivamente avviati ed allo stessso tempo di avviarli in continuazione
-	int emergency_local = NO_ALL;
-	/* Infinite loop */
-	for(;;)
-	{
-		emergency_local = readEmergencyCode();
 
-		//Depending on the conditions the timers controlling the led are started or stopped only once using a boolean variable
-		if((timers_started == false) && (emergency_local != NO_ALL)){
-			timers_started = true;
-			osTimerStart(myTimerLed1Handle, 500);
-			osTimerStart(myTimerLed2Handle, 300);
-		} else if ((timers_started) && (emergency_local == NO_ALL)){
-			timers_started = false;
-			osTimerStop(myTimerLed1Handle);
-			osTimerStop(myTimerLed2Handle);
-		}
-		osDelay(500);
-
-	}
+  /* Infinite loop */
+  for(;;)
+  {
+	osTimerStart(myTimerLed1Handle, 500);
+	osTimerStart(myTimerLed2Handle, 300);
+    osDelay(4000);
+    osTimerStop(myTimerLed1Handle);
+    osTimerStop(myTimerLed2Handle);
+    osDelay(2000);
+  }
   /* USER CODE END StartLED_manager */
 }
 
 /* USER CODE BEGIN Header_StartButton_manager */
 /**
- * @brief Function implementing the Button_manager thread.
- * @param argument: Not used
- * @retval None
- */
+* @brief Function implementing the Button_manager thread.
+* @param argument: Not used
+* @retval None
+*/
 /* USER CODE END Header_StartButton_manager */
 void StartButton_manager(void const * argument)
 {
   /* USER CODE BEGIN StartButton_manager */
-	int emergency_local = NO_ALL;
-	/* Infinite loop */
-	for(;;)
-	{
-		emergency_local = readEmergencyCode();
-
-		//If the button is pressed during an emergency all the alarms are temporary stopped, else it grant access
-		if((HAL_GPIO_ReadPin(USER_BUTTON_GPIO_PORT, USER_BUTTON_PIN) == GPIO_PIN_RESET) && (emergency_local != NO_ALL)){
-			osMutexWait(myMutexEmergencyHandle, osWaitForever);
-			emergency_code = NO_ALL;
-			stop_allarmi = true;
-			osMutexRelease(myMutexEmergencyHandle);
-
-			osMutexWait(myMutex_LCDHandle, osWaitForever);
-			clear();
-			setCursor(0, 0);
-			print("RESET"); //Print this
-			setCursor(0, 1); //At secound row first column
-			print("ALLARMI"); //Print this
-			osDelay(2000);
-			osMutexRelease(myMutex_LCDHandle);
-
-		} else if ((HAL_GPIO_ReadPin(USER_BUTTON_GPIO_PORT, USER_BUTTON_PIN) == GPIO_PIN_RESET) && (emergency_local == NO_ALL)){
-			osMutexWait(myMutex_LCDHandle, osWaitForever);
-			clear();
-			setCursor(0, 0);
-			print("ACCESSO"); //Print this
-			setCursor(0, 1); //At secound row first column
-			print("CONSENTITO"); //Print this
-			osDelay(2500);
-			osMutexRelease(myMutex_LCDHandle);
-		}
-
-		osDelay(500);
-	}
+  /* Infinite loop */
+  for(;;)
+  {
+	  if(HAL_GPIO_ReadPin(USER_BUTTON_GPIO_PORT, USER_BUTTON_PIN) == GPIO_PIN_RESET){
+	  			//Here when the button is pressed
+	  			clear();
+	  			print("YES");
+	  		} else {
+	  			//Here is when it is NOT PRESSED
+	  			osDelay(10);
+	  		}
+	  		osDelay(10);
+  }
   /* USER CODE END StartButton_manager */
-}
-
-/* USER CODE BEGIN Header_StartLCD_TotAllarm */
-/**
- * @brief Function implementing the LCD_TotAllarm thread.
- * @param argument: Not used
- * @retval None
- */
-/* USER CODE END Header_StartLCD_TotAllarm */
-void StartLCD_TotAllarm(void const * argument)
-{
-  /* USER CODE BEGIN StartLCD_TotAllarm */
-	int emergency_local = NO_ALL;
-	/* Infinite loop */
-	for(;;)
-	{
-		emergency_local = readEmergencyCode();
-
-		//Writing an emergency message in the LCD if conditions are satisfied
-		if(emergency_local == ALL_TOT){
-			osMutexWait(myMutex_LCDHandle, osWaitForever);
-			clear();
-			setCursor(0, 0);
-			print("EMERGENCY");
-			osDelay(2000);
-			clear();
-			setCursor(0, 0);
-			print("TEMP e HUM"); //Print this
-			setCursor(0, 1); //At secound row first column
-			print("OUT OF RANGE"); //Print this
-			osDelay(2000);
-			osMutexRelease(myMutex_LCDHandle);
-			osDelay(5000);
-		}
-		osDelay(1000);
-	}
-  /* USER CODE END StartLCD_TotAllarm */
-}
-
-/* USER CODE BEGIN Header_StartBuzzer_sound */
-/**
- * @brief Function implementing the Buzzer_sound thread.
- * @param argument: Not used
- * @retval None
- */
-/* USER CODE END Header_StartBuzzer_sound */
-void StartBuzzer_sound(void const * argument)
-{
-  /* USER CODE BEGIN StartBuzzer_sound */
-	/* Infinite loop */
-	for(;;)
-	{
-		//This task perform the buzzer sound and its status (ready or suspended) it's controller by the task Buzzer_manager
-		HAL_GPIO_WritePin(Buzzer_GPIO_Port, Buzzer_Pin, GPIO_PIN_SET);
-		osDelay(1000);
-		HAL_GPIO_WritePin(Buzzer_GPIO_Port, Buzzer_Pin, GPIO_PIN_RESET);
-		osDelay(1000);
-	}
-  /* USER CODE END StartBuzzer_sound */
 }
 
 /* CallbackLed1 function */
@@ -1445,11 +1152,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-	/* User can add his own implementation to report the HAL error return state */
-	__disable_irq();
-	while (1)
-	{
-	}
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
+  {
+  }
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -1464,7 +1171,7 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-	/* User can add his own implementation to report the file name and line number,
+  /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }
